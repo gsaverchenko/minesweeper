@@ -1,11 +1,12 @@
 ﻿using System;
 
-namespace minesweeper
+namespace Minesweeper
 {
     class Program
     {
         static void Main(string[] args)
         {
+
             var map = new int[10];
             map[4] = 1;
             map[7] = 1;
