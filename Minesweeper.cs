@@ -21,22 +21,66 @@ namespace Minesweeper
             CalculateMapSquares();
         }
 
-        public string SelectSquare(int x, int y)
+        public bool SelectSquare(int selectedX, int selectedY)
         {
-            return _map.FirstOrDefault(
-                m => m.X == x && m.Y == y).HasMine ? "BOOM!" : "Clear";
+            var square = _map.FirstOrDefault(
+                s => s.X == selectedX && s.Y == selectedY);
+            if (square.HasMine)
+            {
+                foreach (var mine in _map.Where(x => x.HasMine))
+                { mine.View = "*"; }
+                square.View = "X";
+            }
+            else if (square.NearByMines == 0)
+            {
+                square.View = " ";
+
+                var nearSquares = _map.Where(
+                    s => Math.Abs(s.X - selectedX) <= 1
+                    && Math.Abs(s.Y - selectedY) <= 1 && s.View == "-"
+                    && (s.X != selectedX || s.Y != selectedY));
+                foreach (var near in nearSquares)
+                { SelectSquare(near.X, near.Y); }
+            }
+            else
+            { square.View = $"{square.NearByMines}"; }
+
+            return square.HasMine;
         }
 
         public string PrintMap()
         {
-            return _map.ToString();
+            var mapPrint = string.Empty.PadRight(4);
+            for (int y = 1; y <= _width; y++)
+            {
+                mapPrint += $"{y}".PadRight(3);
+            }
+
+            mapPrint += "Y\n".PadLeft(3);
+
+            for (int x = 0; x < _height; x++)
+            {
+                var padX = $"{x + 1}".PadRight(3);
+                mapPrint += $"{padX}|";
+                for (int y = 0; y < _width; y++)
+                {
+                    var square = _map.FirstOrDefault(
+                        m => m.X == x && m.Y == y).View;
+                    mapPrint += $"[{square}]";
+                }
+                mapPrint += "|\n";
+            }
+
+            mapPrint += "X\n";
+
+            return mapPrint;
         }
 
         private void FillMapWithMines()
         {
             var random = new Random { };
-            var difficulty = _totalSquares / 10;
-            foreach (int i in Enumerable.Range(1, _totalSquares))
+            var difficulty = _totalSquares / 20;
+            foreach (int i in Enumerable.Range(0, _totalSquares))
             {
                 _map.Add(new Square
                 {
@@ -49,6 +93,13 @@ namespace Minesweeper
 
         private void CalculateMapSquares()
         {
+            _map.ForEach(square =>
+            {
+                square.NearByMines = _map.Count(
+                    x => x.HasMine
+                    && Math.Abs(square.X - x.X) <= 1
+                    && Math.Abs(square.Y - x.Y) <= 1);
+            });
         }
     }
 }
